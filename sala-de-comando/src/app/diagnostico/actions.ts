@@ -14,6 +14,11 @@ import {
   normalizePhone,
   toAsaasMobile,
 } from "@/lib/diagnostico";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+const RATE_LIMIT_SCOPE = "diagnostico_checkout";
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MINUTES = 10;
 
 export type CheckoutResult =
   | { ok: true; next: string }
@@ -33,6 +38,15 @@ export async function createDiagnosticoCheckout(formData: FormData): Promise<Che
   // Honeypot: bots preenchem, pessoas não veem este campo.
   if (text(formData, "website")) {
     return { ok: false, error: "Não foi possível processar o pedido." };
+  }
+
+  const ip = await getClientIp();
+  if (!ip) {
+    return { ok: false, error: "Não foi possível identificar sua conexão. Tente novamente." };
+  }
+  const allowed = await checkRateLimit(RATE_LIMIT_SCOPE, ip, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MINUTES);
+  if (!allowed) {
+    return { ok: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
   }
 
   const name = text(formData, "name");

@@ -173,10 +173,17 @@ regra 3 da seção 3 continua valendo para eles. Os valores da seção 1
       diagnóstico vira `agendado` com `scheduled_at`) e e-mails via Resend
       (`src/lib/email.ts`): "pagamento confirmado + link de agendar" ao lead
       (cobre quem paga no cartão) e confirmação do agendamento ao lead e ao
-      Flávio. Falta: verificar o domínio no Resend (hoje o remetente
-      configurado é recusado), cadastrar o webhook no painel do Asaas (exige URL
-      pública + `APP_URL` real), produção, limite de tentativas na página pública
-      e o financeiro da mentoria (installments).
+      Flávio. Limite de 5 envios por IP a cada 10 minutos no checkout
+      (`src/lib/rate-limit.ts`, tabela `rate_limit_hits` — persistido no
+      Supabase, não em memória, porque funções serverless da Vercel não
+      compartilham memória entre instâncias). `APP_URL` agora só vem de
+      variável de ambiente (sem fallback pra localhost — se faltar, o e-mail
+      de agendamento não sai e fica registrado no log). Preparado para deploy
+      na Vercel: `.env.production.example` (nomes de todas as variáveis),
+      `npm run build` limpo. Falta: verificar o domínio no Resend (hoje o
+      remetente configurado é recusado), cadastrar o webhook no painel do
+      Asaas com URL pública, registrar o app no Inngest Cloud, e o financeiro
+      da mentoria (installments).
 - [~] Sprint 2 — Motor de agentes genérico pronto (`src/lib/agents/engine.ts`):
       carrega prompt versionado do banco, chama Claude API de verdade (Sonnet 5
       pros agentes de decisão/núcleo, Haiku 4.5 pros de conteúdo — corrigido o

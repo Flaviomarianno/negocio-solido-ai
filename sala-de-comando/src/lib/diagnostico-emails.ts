@@ -14,9 +14,12 @@ function log(label: string, result: Awaited<ReturnType<typeof sendEmail>>) {
   else console.error(`[email] ${label}: FALHOU — ${result.error}`);
 }
 
-export function agendarUrl(paymentId: string) {
-  const base = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  return `${base}/diagnostico/agendar?p=${paymentId}`;
+// Sempre a partir de APP_URL — nunca um localhost fixo, porque o link vai
+// dentro de um e-mail e precisa abrir em qualquer dispositivo.
+export function agendarUrl(paymentId: string): string | null {
+  const appUrl = process.env.APP_URL;
+  if (!appUrl) return null;
+  return `${appUrl.replace(/\/$/, "")}/diagnostico/agendar?p=${paymentId}`;
 }
 
 // Pagamento confirmado -> link para escolher o horário (é o caminho de quem
@@ -25,6 +28,10 @@ export async function sendPaymentConfirmedEmail(lead: LeadContact, paymentId: st
   if (!lead.email) return;
   const name = lead.name?.split(" ")[0] ?? "";
   const url = agendarUrl(paymentId);
+  if (!url) {
+    console.error("[email] pagamento confirmado -> lead: FALHOU — APP_URL não configurada.");
+    return;
+  }
 
   const result = await sendEmail({
     to: [lead.email],
