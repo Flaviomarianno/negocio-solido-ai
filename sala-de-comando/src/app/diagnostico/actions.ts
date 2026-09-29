@@ -11,8 +11,8 @@ import {
 import {
   DIAGNOSTICO_PRICE,
   isDiagnosticoMethod,
-  normalizePhone,
-  toAsaasMobile,
+  isValidDdi,
+  buildWhatsapp,
 } from "@/lib/diagnostico";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -51,8 +51,8 @@ export async function createDiagnosticoCheckout(formData: FormData): Promise<Che
 
   const name = text(formData, "name");
   const email = text(formData, "email");
-  const phone = normalizePhone(text(formData, "phone"));
-  const whatsapp = normalizePhone(text(formData, "whatsapp"));
+  const whatsappDdi = text(formData, "whatsappDdi");
+  const whatsappNumber = text(formData, "whatsapp");
   const cpfCnpj = text(formData, "cpfCnpj").replace(/\D/g, "");
   const method = formData.get("method");
 
@@ -60,7 +60,8 @@ export async function createDiagnosticoCheckout(formData: FormData): Promise<Che
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 160) {
     return { ok: false, error: "Informe um e-mail válido." };
   }
-  if (!phone) return { ok: false, error: "Informe um telefone válido com DDD." };
+  if (!isValidDdi(whatsappDdi)) return { ok: false, error: "Informe um DDI válido (ex.: +55)." };
+  const whatsapp = buildWhatsapp(whatsappDdi, whatsappNumber);
   if (!whatsapp) return { ok: false, error: "Informe um WhatsApp válido com DDD." };
   if (cpfCnpj && cpfCnpj.length !== 11 && cpfCnpj.length !== 14) {
     return { ok: false, error: "CPF ou CNPJ inválido." };
@@ -75,8 +76,8 @@ export async function createDiagnosticoCheckout(formData: FormData): Promise<Che
   try {
     const { lead } = await upsertLead({
       fullName: name,
-      phone,
-      whatsapp,
+      phone: whatsapp.e164,
+      whatsapp: whatsapp.e164,
       email,
       sourceChannel: "pagina_diagnostico",
       updateSource: false,
@@ -119,7 +120,7 @@ export async function createDiagnosticoCheckout(formData: FormData): Promise<Che
         await createCustomer({
           name,
           email,
-          mobilePhone: toAsaasMobile(whatsapp),
+          mobilePhone: whatsapp.national,
           cpfCnpj: cpfCnpj || undefined,
           externalReference: leadId,
         })

@@ -42,14 +42,31 @@ export default function CheckoutForm() {
         <input id="email" name="email" type="email" required autoComplete="email" className={inputClass} />
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-[90px_1fr] gap-3">
         <div className="space-y-1">
-          <label htmlFor="phone" className="block text-sm text-foreground/80">Telefone</label>
-          <input id="phone" name="phone" type="tel" required autoComplete="tel" placeholder="(11) 99999-0000" className={inputClass} />
+          <label htmlFor="whatsappDdi" className="block text-sm text-foreground/80">DDI</label>
+          <input
+            id="whatsappDdi"
+            name="whatsappDdi"
+            type="text"
+            inputMode="tel"
+            required
+            defaultValue="+55"
+            placeholder="+55"
+            className={inputClass}
+          />
         </div>
         <div className="space-y-1">
           <label htmlFor="whatsapp" className="block text-sm text-foreground/80">WhatsApp</label>
-          <input id="whatsapp" name="whatsapp" type="tel" required placeholder="(11) 99999-0000" className={inputClass} />
+          <input
+            id="whatsapp"
+            name="whatsapp"
+            type="tel"
+            required
+            autoComplete="tel"
+            placeholder="(11) 99999-0000"
+            className={inputClass}
+          />
         </div>
       </div>
 

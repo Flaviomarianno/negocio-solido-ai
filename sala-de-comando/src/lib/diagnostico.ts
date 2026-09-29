@@ -9,15 +9,28 @@ export function isDiagnosticoMethod(value: unknown): value is DiagnosticoMethod 
   return typeof value === "string" && (DIAGNOSTICO_METHODS as readonly string[]).includes(value);
 }
 
-// Normaliza para E.164 assumindo Brasil quando vier só DDD + número.
-export function normalizePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 10 || digits.length === 11) return `+55${digits}`;
-  if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) return `+${digits}`;
-  return null;
+export const DEFAULT_WHATSAPP_DDI = "+55";
+
+// "+" seguido de 1 a 4 dígitos.
+export function isValidDdi(raw: string): boolean {
+  return /^\+\d{1,4}$/.test(raw.trim());
 }
 
-// DDD + número, sem código do país (formato que o Asaas espera em mobilePhone).
-export function toAsaasMobile(e164: string): string {
-  return e164.replace(/^\+55/, "");
+export type Whatsapp = { e164: string; ddi: string; national: string };
+
+// Combina DDI + número num único WhatsApp em E.164. Para +55, exige DDD +
+// número no padrão brasileiro (10 ou 11 dígitos); para outros DDIs, só
+// dígitos, mínimo 8 — não temos regra de formato por país fora do Brasil.
+export function buildWhatsapp(ddiRaw: string, numberRaw: string): Whatsapp | null {
+  const ddi = ddiRaw.trim();
+  if (!isValidDdi(ddi)) return null;
+
+  const national = numberRaw.replace(/\D/g, "");
+  if (ddi === "+55") {
+    if (national.length !== 10 && national.length !== 11) return null;
+  } else if (national.length < 8) {
+    return null;
+  }
+
+  return { e164: `${ddi}${national}`, ddi, national };
 }
